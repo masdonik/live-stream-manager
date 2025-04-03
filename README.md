@@ -23,7 +23,7 @@ Aplikasi berbasis Node.js untuk live streaming ke Facebook/YouTube menggunakan F
 
 1. Clone repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/masdonik/live-stream-manager.git
 cd live-streaming-app
 ```
 
