@@ -1,0 +1,20 @@
+{
+  "name": "live-streaming-app",
+  "version": "1.0.0",
+  "description": "Aplikasi live streaming FB/YT dengan ffmpeg tanpa encoding",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.9",
+    "systeminformation": "^5.21.7",
+    "dotenv": "^16.3.1",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

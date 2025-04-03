@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Video - Live Streaming App</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-800 shadow-lg">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <!-- Logo dan Navigasi -->
+                <div class="flex items-center gap-6">
+                    <a href="/" class="text-2xl font-bold text-blue-500">
+                        <i class="fas fa-video mr-2"></i>LiveStream
+                    </a>
+                    <nav class="flex gap-4">
+                        <a href="/live" class="text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-broadcast-tower mr-1"></i>Live Streaming
+                        </a>
+                        <a href="/download" class="text-white font-semibold">
+                            <i class="fas fa-download mr-1"></i>Download Video
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- System Metrics -->
+                <div class="flex gap-4 text-sm bg-slate-900 p-2 rounded-lg">
+                    <div class="flex items-center" title="CPU Usage">
+                        <i class="fas fa-microchip text-blue-400 mr-2"></i>
+                        <span id="cpuUsage">0%</span>
+                    </div>
+                    <div class="flex items-center" title="Memory Usage">
+                        <i class="fas fa-memory text-green-400 mr-2"></i>
+                        <span id="memoryUsage">0%</span>
+                    </div>
+                    <div class="flex items-center" title="Disk Usage">
+                        <i class="fas fa-hdd text-purple-400 mr-2"></i>
+                        <span id="diskUsage">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="space-y-6">
+    <!-- Form Download Video -->
+    <div class="bg-slate-800 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Download Video dari Google Drive</h2>
+        <form id="downloadForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">URL Google Drive</label>
+                    <input type="url" name="url" autocomplete="off" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        placeholder="https://drive.google.com/file/d/..." required>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-download mr-2"></i>Download
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Daftar Video -->
+    <div class="bg-slate-800 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Daftar Video</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left border-b border-slate-700">
+                        <th class="pb-3 pr-4">Nama Video</th>
+                        <th class="pb-3 pr-4">Ukuran</th>
+                        <th class="pb-3 pr-4">Tanggal Download</th>
+                        <th class="pb-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="videoList">
+                    <% if (videos.length === 0) { %>
+                        <tr>
+                            <td colspan="4" class="py-4 text-center text-gray-400">Belum ada video yang didownload</td>
+                        </tr>
+                    <% } else { %>
+                        <% videos.forEach(function(video) { %>
+                            <tr class="border-b border-slate-700" data-video-name="<%= video.name %>">
+                                <td class="py-3 pr-4">
+                                    <span class="video-name"><%= video.name %></span>
+                                    <form class="hidden rename-form flex-grow">
+                                        <input type="text" value="<%= video.name %>" autocomplete="off" 
+                                            class="bg-slate-700 border border-slate-600 rounded px-2 py-1 mr-2 flex-grow">
+                                        <button type="submit" class="text-green-500 hover:text-green-400">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="cancel-rename ml-2 text-red-500 hover:text-red-400">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="py-3 pr-4"><%= video.size %></td>
+                                <td class="py-3 pr-4"><%= moment(video.downloadDate).format('DD/MM/YYYY HH:mm:ss') %></td>
+                                <td class="py-3">
+                                    <div class="flex gap-2">
+                                        <button onclick="startRename(this)" 
+                                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteVideo('<%= video.name %>')"
+                                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-slate-800 rounded-lg p-6 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p class="text-lg">Sedang mendownload video...</p>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const url = formData.get('url');
+    
+    // Show loading overlay
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/download/download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat mendownload video');
+    } finally {
+        // Hide loading overlay
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+});
+
+function startRename(button) {
+    const row = button.closest('tr');
+    const nameCell = row.querySelector('td:first-child');
+    const nameSpan = nameCell.querySelector('.video-name');
+    const renameForm = nameCell.querySelector('.rename-form');
+    
+    nameSpan.classList.add('hidden');
+    renameForm.classList.remove('hidden');
+    renameForm.classList.add('flex');
+    
+    const input = renameForm.querySelector('input');
+    input.focus();
+    input.select();
+}
+
+// Event delegation for rename forms
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('cancel-rename')) {
+        const form = e.target.closest('.rename-form');
+        const nameSpan = form.parentElement.querySelector('.video-name');
+        
+        form.classList.add('hidden');
+        form.classList.remove('flex');
+        nameSpan.classList.remove('hidden');
+    }
+});
+
+// Event delegation for rename form submission
+document.addEventListener('submit', async (e) => {
+    if (e.target.classList.contains('rename-form')) {
+        e.preventDefault();
+        
+        const row = e.target.closest('tr');
+        const oldName = row.dataset.videoName;
+        const newName = e.target.querySelector('input').value;
+        
+        if (oldName === newName) {
+            e.target.classList.add('hidden');
+            e.target.classList.remove('flex');
+            row.querySelector('.video-name').classList.remove('hidden');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/download/rename', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ oldName, newName })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat mengubah nama video');
+        }
+    }
+});
+
+async function deleteVideo(filename) {
+    if (!confirm('Yakin ingin menghapus video ini?')) return;
+    
+    try {
+        const response = await fetch('/download/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ filename })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            location.reload();
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menghapus video');
+    }
+}
+
+// Refresh video list periodically
+async function refreshVideoList() {
+    try {
+        const response = await fetch('/download/list');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            // Update table with new data
+            const tbody = document.getElementById('videoList');
+            if (result.data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-4 text-center text-gray-400">Belum ada video yang didownload</td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = result.data.map(video => `
+                    <tr class="border-b border-slate-700" data-video-name="${video.name}">
+                        <td class="py-3 pr-4">
+                            <span class="video-name">${video.name}</span>
+                            <form class="hidden rename-form flex-grow">
+                                <input type="text" value="${video.name}" 
+                                    class="bg-slate-700 border border-slate-600 rounded px-2 py-1 mr-2 flex-grow">
+                                <button type="submit" class="text-green-500 hover:text-green-400">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button type="button" class="cancel-rename ml-2 text-red-500 hover:text-red-400">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="py-3 pr-4">${video.size}</td>
+                        <td class="py-3 pr-4">${moment(video.downloadDate).format('DD/MM/YYYY HH:mm:ss')}</td>
+                        <td class="py-3">
+                            <div class="flex gap-2">
+                                <button onclick="startRename(this)" 
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteVideo('${video.name}')"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing video list:', error);
+    }
+}
+
+// Refresh video list every 10 seconds
+setInterval(refreshVideoList, 10000);
+</script>
