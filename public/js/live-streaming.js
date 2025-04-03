@@ -1,47 +1,75 @@
-// FFmpeg script templates for each platform (without encoding)
-const ffmpegTemplates = {
-    facebook: '-stream_loop -1 -re -i "{videoPath}" -c copy -f flv -fflags nobuffer -flags low_delay "rtmps://live-api-s.facebook.com:443/rtmp/{streamKey}"',
-    youtube: '-stream_loop -1 -re -i "{videoPath}" -c copy -f flv -fflags nobuffer -flags low_delay "rtmps://a.rtmps.youtube.com/live2/{streamKey}"'
-};
-
-// Handle form submission
-document.getElementById('streamForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Add FFmpeg script based on selected platform
-    data.ffmpegScript = ffmpegTemplates[data.platform]
-        .replace('{videoPath}', data.videoPath)
-        .replace('{streamKey}', data.streamKey);
-    
+// Update system metrics
+async function updateSystemMetrics() {
     try {
-        const response = await fetch('/live/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
+        const response = await fetch('/live/metrics');
+        const metrics = await response.json();
+
+        // Update CPU Usage
+        document.getElementById('cpuUsage').textContent = metrics.cpu || '0';
         
-        const result = await response.json();
+        // Update Memory Usage
+        document.getElementById('memoryUsage').textContent = metrics.memory || '0';
         
-        if (result.status === 'success') {
-            location.reload();
-        } else {
-            alert(result.message);
-        }
+        // Update Disk Usage
+        document.getElementById('diskUsage').textContent = metrics.disk || '0';
     } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat memulai streaming');
+        console.error('Error updating metrics:', error);
     }
+}
+
+// Form submission handler
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('streamForm');
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(form);
+        const data = {
+            platform: formData.get('platform'),
+            streamKey: formData.get('streamKey'),
+            videoPath: formData.get('videoPath'),
+            scheduleTime: formData.get('scheduleTime') || null,
+            duration: formData.get('duration') || null
+        };
+
+        // Validate required fields
+        if (!data.platform || !data.streamKey || !data.videoPath) {
+            alert('Platform, Stream Key, dan Video wajib diisi');
+            return;
+        }
+
+        try {
+            const response = await fetch('/live/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert('Streaming berhasil dimulai');
+                window.location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error starting stream:', error);
+            alert('Gagal memulai streaming: ' + error.message);
+        }
+    });
 });
 
-// Handle stream stop
+// Stop stream handler
 async function stopStream(streamId) {
-    if (!confirm('Yakin ingin menghentikan streaming ini?')) return;
-    
+    if (!confirm('Yakin ingin menghentikan streaming ini?')) {
+        return;
+    }
+
     try {
         const response = await fetch('/live/stop', {
             method: 'POST',
@@ -50,42 +78,23 @@ async function stopStream(streamId) {
             },
             body: JSON.stringify({ streamId })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.status === 'success') {
-            location.reload();
+            alert('Streaming berhasil dihentikan');
+            window.location.reload();
         } else {
-            alert(result.message);
+            alert('Error: ' + result.message);
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat menghentikan streaming');
+        console.error('Error stopping stream:', error);
+        alert('Gagal menghentikan streaming: ' + error.message);
     }
 }
 
-// Handle scheduled stream cancellation
-async function cancelScheduledStream(streamId) {
-    if (!confirm('Yakin ingin membatalkan streaming terjadwal ini?')) return;
-    
-    try {
-        const response = await fetch('/live/stop', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ streamId })
-        });
-        
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-            location.reload();
-        } else {
-            alert(result.message);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat membatalkan streaming');
-    }
-}
+// Update metrics every 5 seconds
+setInterval(updateSystemMetrics, 5000);
+
+// Initial metrics update
+updateSystemMetrics();
